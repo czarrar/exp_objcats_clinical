@@ -1,0 +1,1068 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Learning Value</title>        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="jspsych-6.0.4/jspsych.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-survey-text.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-survey-multi-choice.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-call-function.js"></script>
+        <script src="jspsych-6.0.4/plugins/jspsych-fullscreen.js"></script>
+        <link href="jspsych-6.0.4/css/jspsych.css" rel="stylesheet" type="text/css">
+        <script src="params/vals_pics.js" ></script>
+        <script src="bowser.min.js" ></script>
+        <style media="screen" type="text/css">
+          body { text-align: center; }
+          div.instruct      { text-align: left; }
+          p.instruct        { text-align: left; max-width: 800px; }
+          li.instruct        { text-align: left; max-width: 800px; }
+          p.title           { font-size: 48px; padding: 10% 0 0 0; font-weight: bold; }
+          p.subtitle        { font-size: 24px; }
+          div.clear         { clear: both; }
+          div.button        { text-align: center; }
+          div.button        { width:720px; text-align:right; font-style:italic; font-size: 16px; }
+          #rcorners2 {
+              display:inline-block; text-align: center; 
+              vertical-align: middle; line-height: 200px; font-size:2.5em;
+              border-radius: 25px;
+              border: 3px solid #4C4C4C;
+              margin: 25px;
+              padding: 25px; 
+              width: 200px;
+              height: 200px;    
+          }
+          div.value { display:inline-block; text-align: center; 
+            vertical-align: middle; line-height: 200px; font-size:2.5em; margin-top: -100px; margin-bottom: 400px;}
+        </style>
+    </head>
+    <body>
+      <div id='display_element'>
+      </div>
+    </body>
+    <script>
+    var trials = []
+    
+    var sid = jsPsych.randomization.randomID(8);
+    
+    
+    /****
+    * Sprintf
+    ****/
+    
+    if (!String.format) {
+      String.format = function(format) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return format.replace(/{(\d+)}/g, function(match, number) { 
+          return typeof args[number] != 'undefined'
+            ? args[number] 
+            : match
+          ;
+        });
+      };
+    }
+    
+    /****
+    * URL QUERY STRING
+    ****/
+    
+    // Let's get the query string
+    var QueryString = function () {
+      // This function is anonymous, is executed immediately and 
+      // the return value is assigned to QueryString!
+      var query_string = {};
+      var query = window.location.search.substring(1);
+      var vars = query.split("&");
+      for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+            // If first entry with this name
+        if (typeof query_string[pair[0]] === "undefined") {
+          query_string[pair[0]] = decodeURIComponent(pair[1]);
+            // If second entry with this name
+        } else if (typeof query_string[pair[0]] === "string") {
+          var arr = [ query_string[pair[0]],decodeURIComponent(pair[1]) ];
+          query_string[pair[0]] = arr;
+            // If third or later entry with this name
+        } else {
+          query_string[pair[0]].push(decodeURIComponent(pair[1]));
+        }
+      } 
+      return query_string;
+    }();
+    //// Subject
+    //if (QueryString.subject == undefined) {
+    //  alert('Please enter ?subject=X into the url where X is some number');
+    //}
+    //var subid = QueryString.subject;
+    // workerId
+    if (QueryString.workerId == undefined) {
+      alert('Please enter ?workerId=X into the url where X is some character/number');
+    }
+    var workId = QueryString.workerId;
+    var assId = QueryString.assignmentId;
+    var hitId = QueryString.hitId;
+    
+    
+    
+    /****
+    * TRIAL SETUP
+    ****/
+    
+    sanitize_val = function(orig_val) {
+      new_val = orig_val.replace('&#162', '').replace('&#36;', '');
+      new_val = parseInt(new_val);
+      if (new_val == 1) {
+        new_val = 100;
+      }
+      return(new_val);
+    }
+    
+    
+    /****
+    * INSTRUCTIONS
+    ****/
+    
+    var instructions = {
+        type: 'instructions',
+        pages: [
+          '<p class="instruct">We invite you to participate in a research study investigating learning, memory and decision making. You will play a game in which you will have a chance to win additional money typically ranging from $1-$3. This will take a total of 30-40mins of your time. It is divided into two parts. The first part will take 23mins while the second part will take 8-18mins. Should you have any questions about this study you can contact one of the Investigators, Zarrar Shehzad, at zs2384[at]columbia.edu. The following pages give instructions on the experiment.</p>', 
+          
+          '<p class="instruct">We first give an overview of the study.</p>' +
+          '<p class="instruct">In this study, you be asked to choose between two cards each showing an object. On the other side of the card (hidden from view) will be the dollar value (0&#162, 20&#162, 40&#162, 60&#162, 80&#162, and &#36;1). You can press the "j" key to select the left card and press the "k" key to select the right card. The selected card will then flip over to reveal the winnings while the unselected card disappears. Some cards will be repeated, and you can use your memory of that cards value to make more money.</p>', 
+          
+          '<p class="instruct">Next, we provide details relevant to your participation.</p>' + 
+          '<p class="title">Confidentiality<p>' + 
+          '<p class="instruct">Your participation in this study will remain confidential. However, the following individuals and/or agencies will be able to look at, copy, use, and share your research information:</p>' + 
+          '<ul><li class="instruct">The investigator, Columbia University Medical Center, and other medical professionals who may be evaluating the study</li>' + 
+          '<li class="instruct">Authorities from Columbia University, including the Institutional Review Board (IRB)</li>' + 
+          '<li class="instruct">The Federal Office of Human Research Protections (OHRP)</li></ul>' +
+          '<p class="instruct">Data will be collected, analyzed and stored with an alphanumeric code and never kept with any information that could be used to identify participants. All documents with identifying information will be kept separate from study data in a locked file cabinet or password protected electronic files.</p>' +
+          '<p class="instruct">Your authorization to use and share the information collected for this research purpose does not have an expiration (ending) date.</p>' +
+          '<p class="instruct">Your Amazon Mechanical Turk (Mturk) worker ID (i.e., the 14-character sequence of letters and numbers used to identify workers) will be kept separate from study data in a password protected electronic file.</p>' + 
+          '<p class="title">Risks and Benefits<p>' + 
+          '<p class="instruct">There are no personal benefits to completing this study. However, possible broader benefits may be that you will contribute to a greater understanding of underlining cognitive processes in learning, memory and decision making.</p>' +
+          '<p class="instruct">There is a risk of loss of private information; this risk always exists, but there are procedures in place to minimize the risk.</p>' +
+          '<p class="title">Compensation<p>' + 
+          '<p class="instruct">If you agree to take part in this research study, we will pay you for completion of the task at the posted rate on Amazon Mechanical Turk. You will also be given an additional 1% of your winnings during the task, which will be told to you at the end of the task. Payment will be given upon verification that the survey was completed and response accuracy verified. This will occur as soon as possible, dependent upon availability of a member of our research staff, this may take up to 72 hours for both verification and payment through Amazon.</p>' +
+          '<p class="instruct">Tax law may require the Columbia University Finance Department to report the amount of payment you receive from Columbia University to the Internal Revenue Service (IRS) or other agencies, as applicable. Generally, this reporting would take place if you receive payments that equal $600 or more from Columbia University in a calendar year. You would be responsible for the payment of any tax that may be due. You will be paid for your participation at the posted rate.</p>', 
+          
+          '<p class="title">Task<p>' + 
+          '<p class="instruct">On this page and the next page, you will learn about completing the main task for the study. After this you will complete some demo trials to get a handle on the task and then perform the actual experiment that is split into three blocks.</p>' +
+          '<ul><li class="instruct">On each trial, you be asked to choose between two cards each showing an object for 1.5s.</li><li class="instruct">On the other side of the card (hidden from view) will be the dollar value (0&#162, 20&#162, 40&#162, 60&#162, 80&#162, & &#36;1).</li>' +
+          '<li class="instruct">You can press the "j" key to select the left card and press the "k" key to select the right card.</li><li class="instruct">The selected card will then flip over to reveal the winnings for 1.5s while the unselected card disappears.</li>' +
+          '<li class="instruct">If you miss a response, you will see the text "Too Slow" displayed on the screen</li>' +
+          '<li class="instruct">Some cards will be repeated, and you can use your memory of that cards value to make more money.</li>', 
+          
+          '<p class="instruct">You can accumulate money on each trial. Selecting cards with a higher value will allow you to make more money. <b>You can make an additional 1% of your total winnings typically ranging from $1-$3.</b> At the end of each block, we will tell you how much additional money you won on that block. And at the end of the experiment, we will tell you the total additional money you won.</p><p class="instruct">The demo portion (to follow) of the experiment will not count towards your winnings. The demo is intended to familiarize you with the task.</p><p class="instruct">Please note that you must complete the entire experiment to receive the bonus. For instance, if you run out of time (3 hours), you will not be able to receive the bonus.</p>'
+        ],
+        show_clickable_nav: true
+    }
+    trials.push(instructions);
+    
+    var fix_break = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'fix' }, 
+        stimulus: '<div style="font-size:3em">+</div>', 
+        choices: jsPsych.NO_KEYS, 
+        stimulus_duration: 1500, 
+        trial_duration: 1500, 
+        response_ends_trial: false
+    }
+    trials.push(fix_break);
+    
+
+    /*****
+    * INSTRUCTION TEST
+    ******/
+    
+    var quiz_instr = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'block' }, 
+        stimulus: '<div style="font-size:6em">Quiz</div><br /><p class="subtitle">Please answer the next four questions, which test your knowledge of the task.</p><p class="subtitle">(press "j" or "k" continue)</p>', 
+        choices: ["j", "k"]
+    }
+    trials.push(quiz_instr);
+    
+    var q1 = {
+      type: 'survey-multi-choice', 
+      data: { ttype: 'quiz_stim' }, 
+      questions: [{
+        prompt: "On each trial, you will see two objects. How will you choose between those two objects?", 
+        options: ["Randomly", "Based on which looks prettier", "Based on the one you think is worth more", "Always the one on the right"], 
+        required:true
+      }]
+    };
+    trials.push(q1);
+    
+    var trial_b = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'demo_feedback' }, 
+      stimulus: function() {
+        var last_trial = jsPsych.data.get().last(1).values()[0];
+        if (last_trial.responses == '{"Q0":"Based on the one you think is worth more"}') {
+          return("<div style='font-size:3em'>Correct</div><p class='subtitle'><em>On each trial, you will see two objects. You will choose the one you think is worth more.</em><br>Press j or k to continue.</p>");
+        } else {
+          return("<div style='font-size:3em;color:red'>Incorrect</div><p class='subtitle'><em>On each trial, you will see two objects. You will choose the one you think is worth more.</em><br>Press j or k to continue.</p>");
+        }
+      }, 
+      choices: ["j","k"], 
+      response_ends_trial: true, 
+    }
+    trials.push(trial_b);
+    
+    var q2 = {
+      type: 'survey-multi-choice', 
+      data: { ttype: 'quiz_stim' }, 
+      questions: [{
+        prompt: "Objects can be repeated, which means that you can", 
+        options: ["Ignore those objects", "Use your memory of the object's value to earn more money", "Find a pattern to the repitition", "Assume those objects are worth more"], 
+        required:true
+      }]
+    };
+    trials.push(q2);
+    
+    var trial_b = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'demo_feedback' }, 
+      stimulus: function() {
+        var last_trial = jsPsych.data.get().last(1).values()[0];
+        if (last_trial.responses == '{"Q0":"Use your memory of the object\'s value to earn more money"}') {
+          return("<div style='font-size:3em'>Correct</div><p class='subtitle'><em>Object's can be repeated so use your memory of the object to earn more money.</em><br>Press j or k to continue.</p>");
+        } else {
+          return("<div style='font-size:3em;color:red'>Incorrect</div><p class='subtitle'><em>Object's can be repeated so use your memory of the object to earn more money.</em><br>Press j or k to continue.</p>");
+        }
+      }, 
+      choices: ["j","k"], 
+      response_ends_trial: true, 
+    }
+    trials.push(trial_b);
+    
+    var q3 = {
+      type: 'survey-multi-choice',
+      data: { ttype: 'quiz_stim' }, 
+      questions: [{
+        prompt: "How much can each object be worth?", 
+        options: ["0&#162, 20&#162, 40&#162, 60&#162, 80&#162, and &#36;1", "&#36;0, &#36;20, &#36;40, &#36;60, &#36;80, and &#36;1", "0&#162, 10&#162, 20&#162, 30&#162, 40&#162, and 40&#162", "0&#162, 200&#162, 400&#162, 600&#162, 800&#162, and 1000&#162"], 
+        required:true
+      }]
+    };
+    trials.push(q3);
+    
+    var trial_b = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'quiz_feedback' }, 
+      stimulus: function() {
+        var last_trial = jsPsych.data.get().last(1).values()[0];
+        if (last_trial.responses == '{"Q0":"0&#162, 20&#162, 40&#162, 60&#162, 80&#162, and &#36;1"}') {
+          return("<div style='font-size:3em'>Correct</div><p class='subtitle'><em>Object's can be worth: 0&#162, 20&#162, 40&#162, 60&#162, 80&#162, and &#36;1.</em><br>Press j or k to continue.</p>");
+        } else {
+          return("<div style='font-size:3em;color:red'>Incorrect</div><p class='subtitle'><em>Object's can be worth: 0&#162, 20&#162, 40&#162, 60&#162, 80&#162, and &#36;1.</em><br>Press j or k to continue.</p>");
+        }
+      }, 
+      choices: ["j","k"], 
+      response_ends_trial: true, 
+    }
+    trials.push(trial_b);
+    
+    var q4 = {
+      type: 'survey-multi-choice', 
+      data: { ttype: 'quiz_stim' }, 
+      questions: [{
+        prompt: "How many blocks (~8mins each) will you be shown?", 
+        options: ["1", "2", "3", "4", "5"], 
+        required:true
+      }]
+    };
+    trials.push(q4);
+    
+    var trial_b = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'quiz_feedback' }, 
+      stimulus: function() {
+        var last_trial = jsPsych.data.get().last(1).values()[0];
+        if (last_trial.responses == '{"Q0":"3"}') {
+          return("<div style='font-size:3em'>Correct</div><p class='subtitle'><em>There will be 3 blocks.</em><br>Press j or k to continue.</p>");
+        } else {
+          return("<div style='font-size:3em;color:red'>Incorrect</div><p class='subtitle'><em>There will be 3 blocks.</em><br>Press j or k to continue.</p>");
+        }
+      }, 
+      choices: ["j","k"], 
+      response_ends_trial: true, 
+    }
+    trials.push(trial_b);
+    
+    var quiz_instr2 = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'block' }, 
+        stimulus: '<div style="font-size:6em">Quiz #2</div><br /><p class="subtitle">Now take the quiz again but without any feedback.</p><p class="subtitle">(press "j" or "k" continue)</p>', 
+        choices: ["j", "k"]
+    }
+    trials.push(quiz_instr2);
+    trials.push(q1, q2, q3, q4);
+    trials.push(fix_break);
+    
+    
+    /*****
+    * DEMO
+    ******/
+    
+    // Do I want to add any enforced break?
+    var demo_start = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'block' }, 
+        stimulus: '<div style="font-size:6em">Demo (10 trials)</div><br /><p class="subtitle">Try out the task for the next 10 trials.</p><p class="subtitle">(press "j" or "k" continue)</p>', 
+        choices: ["j", "k"]
+    }
+    trials.push(demo_start);
+    
+    var fix_break0 = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'fix' }, 
+        stimulus: '<div style="font-size:3em">+</div>', 
+        choices: jsPsych.NO_KEYS, 
+        stimulus_duration: 1500, 
+        trial_duration: 1500, 
+        response_ends_trial: false
+    }
+    trials.push(fix_break0);
+    
+    for (var i = 0; i < 10; i++) {
+      
+      var trial_a = {
+        type: 'html-keyboard-response', 
+        data: { ttype: 'demo_stim', ind: i }, 
+        stimulus: '<img id="rcorners2" height="200" src="{0}" /><img id="rcorners2" height="200" src="{1}" />', 
+        choices: ['j','k'], 
+        stimulus_duration: 1500, 
+        trial_duration: 1500, 
+        response_ends_trial: false, 
+        on_start: function(trial) {
+          /*** First Stim ***/
+          var s1_path = demo_stim_paths.shift();
+          var s1_val  = demo_stim_str_vals.shift();
+          var s1_side = jsPsych.randomization.sampleWithoutReplacement(["left", "right"], 1)[0];
+        
+          /*** Second Stim ***/
+          var s2_path = demo_stim_paths.shift();
+          var s2_val  = demo_stim_str_vals.shift();
+        
+          if (s1_path == s2_path) {
+            console.log('why is it the same!');
+          }
+        
+          // Save
+          if (s1_side == "left") {
+            trial.data.left_path  = s1_path;
+            trial.data.right_path = s2_path;
+            
+            trial.data.val_left   = s1_val;
+            trial.data.val_right  = s2_val;
+          } else {
+            trial.data.left_path  = s2_path;
+            trial.data.right_path = s1_path;
+            
+            trial.data.val_left   = s2_val;
+            trial.data.val_right  = s1_val;
+          }
+          
+          trial.stimulus = String.format(trial.stimulus, trial.data.left_path, trial.data.right_path);
+        }, 
+        on_finish: function(data) {
+          //console.log('hey');
+          //console.log(data.rt);
+        }
+      }
+      trials.push(trial_a);
+  
+    // Can we do a no response, repeat?
+        
+    var trial_b = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'demo_feedback' }, 
+      stimulus: function() {
+        var last_trial = jsPsych.data.get().last(1).values()[0];
+        if (last_trial.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('j')) {
+          return(String.format('<div><div id="rcorners2">{0}</div><div  id="rcorners2">{1}</div></div>', last_trial.val_left, stim_val_blank));
+        } else if (last_trial.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('k')) {
+          return(String.format('<div><div id="rcorners2">{0}</div><div id="rcorners2">{1}</div></div>', stim_val_blank, last_trial.val_right));
+        } else {
+          return("<div style='font-size:2em'>Too Slow<br /><br />(Press j=left / k=right)</div>");
+        }
+      }, 
+      choices: jsPsych.NO_KEYS, 
+      stimulus_duration: 1500, 
+      trial_duration: 1500, 
+      response_ends_trial: false, 
+    }
+    trials.push(trial_b)
+  
+    var trial_c = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'demo_fix' }, 
+        stimulus: '<div style="font-size:3em">+</div>', 
+        choices: jsPsych.NO_KEYS, 
+        stimulus_duration: 500, 
+        trial_duration: 500, 
+        response_ends_trial: false
+    }
+    trials.push(trial_c);
+  }
+  
+  var fix_break00 = {
+      type: 'html-keyboard-response',
+      data: { ttype: 'fix' }, 
+      stimulus: '<div style="font-size:3em">+</div>', 
+      choices: jsPsych.NO_KEYS, 
+      stimulus_duration: 1500, 
+      trial_duration: 1500, 
+      response_ends_trial: false
+  }
+  trials.push(fix_break00);
+
+
+    /*****
+    * TASK
+    ******/
+    
+    
+    var nblocks = block_data.length;
+    
+    var blocks_trial_s1_inds  = Array(nblocks);
+    var blocks_trial_s1_inds2 = Array(nblocks);
+    var blocks_trial_s2_inds  = Array(nblocks);
+    var blocks_stim_reps      = Array(nblocks);
+    var blocks_repnum  = Array(nblocks).fill(0);
+    var stim_val_blank = "";
+    for (var h = 0; h < nblocks; h++) {
+      // Set the initial values
+      blocks_trial_s1_inds[h]  = Array(ntrials[h]).fill(-1);
+      blocks_trial_s1_inds2[h] = Array(ntrials[h]).fill(-1);
+      blocks_trial_s2_inds[h]  = Array(ntrials[h]).fill(-1);
+      blocks_stim_reps[h]      = Array(ntrials[h]).fill(false);
+    }
+    
+    var blocks_totval = Array(nblocks).fill(0);
+    
+    trials.push({
+      type: 'fullscreen',
+      fullscreen_mode: true
+    });
+    
+    for (var h = 0; h < nblocks; h++) {
+      if (h > 0) {
+        var break_start = {
+            type: 'html-keyboard-response',
+            data: { ttype: 'block' }, 
+            stimulus: String.format('<p class="subtitle">Please take a brief break (up to ~10s) before continuing.<br>(press "j" or "k" continue)</p>', h+1), 
+            choices: ['j','k'], 
+            trial_duration: 10000
+        }
+        trials.push(break_start);
+      }
+      
+    //for (var h = 0; h < 1; h++) {
+      //console.log(h);
+      // Do I want to add any enforced break?
+      var block_start = {
+          type: 'html-keyboard-response',
+          data: { ttype: 'block' }, 
+          stimulus: String.format('<div style="font-size:6em">Block {0}</div><br /><p class="subtitle">(press "j" or "k" continue)</p>', h+1), 
+          choices: ['j','k']
+      }
+      trials.push(block_start);
+      
+      var fix_break = {
+          type: 'html-keyboard-response',
+          data: { ttype: 'fix' }, 
+          stimulus: '<div style="font-size:3em">+</div>', 
+          choices: jsPsych.NO_KEYS, 
+          stimulus_duration: 1500, 
+          trial_duration: 1500, 
+          response_ends_trial: false
+      }
+      trials.push(fix_break);
+      
+      for (var i = 0; i < ntrials[h]; i++) {
+      //for (var i = 0; i < 3; i++) {
+        
+        var trial_a = {
+          type: 'html-keyboard-response', 
+          data: { ttype: 'stim', ind: i, block: h }, 
+          stimulus: '<img id="rcorners2" height="200" src="{0}" /><img id="rcorners2" height="200" src="{1}" />', 
+          choices: ['j','k'], 
+          stimulus_duration: 1500, 
+          trial_duration: 1500, 
+          response_ends_trial: false, 
+          on_start: function(trial) {
+            //console.log('ind: ' + trial.data.ind);
+            
+            var h = trial.data.block;
+            var trial_s1_inds  = blocks_trial_s1_inds[h];
+            var trial_s1_inds2 = blocks_trial_s1_inds2[h];
+            var trial_s2_inds  = blocks_trial_s2_inds[h];
+            var stim_reps      = blocks_stim_reps[h];
+            
+            // Set the other values for this particular block
+            var stim_inds    = block_data[h]['stim_ind'];
+            var extra_stim_inds = block_data[h]['extra_stim_inds'];
+            var stim_extras  = block_data[h]['stim_extras'];
+            var stim_cats    = block_data[h]['stim_cats'];
+            var stim_exs     = block_data[h]['stim_exs'];
+            var stim_vals    = block_data[h]['stim_vals'];
+            var stim_str_vals= block_data[h]['stim_str_vals'];
+            var stim_paths   = block_data[h]['stim_paths'];
+            
+            // Have something separate for the extra trials?
+            // So if run out of the regular ones, then go to the extra 
+          
+            // For first trial, we need randomly pick two cards
+            // 1. ensure the cards are not of the same category
+            // 2. decide on which side cards will go
+            // 3. mark the spot that taken
+          
+            // Now need to pick the future trial, needs to be 5-10 in future
+            // Pick something that is available in that time-frame
+            // Need to mark it and everything
+          
+            /*** First Stim ***/
+            //console.log('repind: ' + trial_s1_inds[trial.data.ind]);
+            if (stim_reps[trial.data.ind]) {
+              // Is this a repeat? Then know already know the first stimuli
+              var s1_ind = trial_s1_inds[trial.data.ind];
+              var s1_extra = 0;
+              var s1_rep = 1;
+              //console.log('repeat');
+            } else {
+              var s1_rep = 0;
+              // Not repeat so randomly get the index
+              if (stim_inds.length == 0) {
+                // If done with actual stimuli use extra ones as buffer
+                var s1_ind = extra_stim_inds.shift();
+                var s1_extra = 1;
+              } else {
+                var s1_ind  = stim_inds.shift();
+                var s1_extra = 0;
+              }
+              trial_s1_inds[trial.data.ind] = s1_ind;
+            }
+            var s1_path = stim_paths[s1_ind];
+            var s1_ex   = stim_exs[s1_ind];
+            var s1_cat  = stim_cats[s1_ind];
+            var s1_val  = stim_str_vals[s1_ind];
+            var s1_side = jsPsych.randomization.sampleWithoutReplacement(["left", "right"], 1)[0];
+          
+            /*** Second Stim ***/
+            if (stim_inds.length == 0) {
+              // Again if out of regular stim, use these extra buffer ones
+              var s2_ind = extra_stim_inds.shift();
+              var s2_extra = 1;
+            } else {
+              // Make sure the second stim is not of the same category
+              var s2_ind = 0;
+              var s2_extra = 0;
+              var found2 = false;
+              for (var i = 0; i < stim_inds.length; i++) {
+                s2_ind  = stim_inds[i];
+                if (stim_cats[s2_ind] != s1_cat) {
+                  s2_ind = stim_inds.splice(i,1)[0];
+                  found2 = true;
+                  break;
+                }
+              }
+              if (found2 == false) {
+                s2_ind = extra_stim_inds.shift();
+              }
+            }
+            trial_s2_inds[trial.data.ind] = s2_ind;
+          
+            var s2_path = stim_paths[s2_ind];
+            var s2_ex   = stim_exs[s2_ind];
+            var s2_cat  = stim_cats[s2_ind];
+            var s2_val  = stim_str_vals[s2_ind];
+          
+            if (s1_cat == s2_cat) {
+              console.log('why is it the same!');
+            }
+          
+            // Save
+            if (s1_side == "left") {
+              trial.data.left_ind   = s1_ind;
+              trial.data.right_ind  = s2_ind;
+            
+              trial.data.left_path  = s1_path;
+              trial.data.right_path = s2_path;
+      
+              trial.data.left_cat   = s1_cat;
+              trial.data.right_cat  = s2_cat;
+            
+              trial.data.left_exid  = s1_ex;
+              trial.data.right_exid = s2_ex;
+            
+              trial.data.val_left   = s1_val;
+              trial.data.val_right  = s2_val;
+              
+              trial.data.left_rep   = s1_rep;
+              trial.data.right_rep  = 0;
+              
+              trial.data.left_extra = s1_extra;
+              trial.data.right_extra= s2_extra;
+            } else {
+              trial.data.left_ind   = s2_ind;
+              trial.data.right_ind  = s1_ind;
+            
+              trial.data.left_path  = s2_path;
+              trial.data.right_path = s1_path;
+      
+              trial.data.left_cat   = s2_cat;
+              trial.data.right_cat  = s1_cat;
+            
+              trial.data.left_exid  = s2_ex;
+              trial.data.right_exid = s1_ex;
+            
+              trial.data.val_left   = s2_val;
+              trial.data.val_right  = s1_val;
+              
+              trial.data.left_rep   = 0;
+              trial.data.right_rep  = s1_rep;
+              
+              trial.data.left_extra = s2_extra;
+              trial.data.right_extra= s1_extra;
+            }
+            
+            trial.stimulus = String.format(trial.stimulus, trial.data.left_path, trial.data.right_path);
+          
+            //console.log(JSON.stringify(trial));
+            //console.log(JSON.stringify(trial_s1_inds2));
+            //console.log(JSON.stringify(trial_s2_inds));
+          }, 
+          on_finish: function(data) {
+              /*** Repeat ***/
+              var k = data.ind;
+              
+              var h = data.block;
+              var trial_s1_inds  = blocks_trial_s1_inds[h];
+              var trial_s1_inds2 = blocks_trial_s1_inds2[h];
+              var trial_s2_inds  = blocks_trial_s2_inds[h];
+              var stim_reps      = blocks_stim_reps[h];
+          
+              //console.log('The trial just ended.');
+              //console.log(JSON.stringify(data));
+              // Have either trials been seen before
+              //console.log(data.ttype)
+              //stim_seen[stim_paths_left[k]] == data.key_press
+          
+              if (blocks_repnum[h] == nrepeats[h]) {
+                // Should we send some signal to end?
+                return;
+              }
+            
+              // This stimulus hasn't been repeated yet!
+              // Find the index in future trials where there is a spot for a repeat
+              if (data.key_press == null) {
+                //console.log('no response');
+                return;
+              } else if (data.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('j')) {
+                blocks_totval[h] += sanitize_val(data.val_left)/100;
+              } else {
+                blocks_totval[h] += sanitize_val(data.val_right)/100;
+              }
+              // TODO: can check if selected the non-repeated element...but maybe not needed
+              if (stim_reps[k] == false) {
+                var sample = [5,6,7,8,9,10];
+                var sample2 = [];
+                for (var j = 0; j < sample.length; j++) {
+                  var future_ind = k + sample[j];
+                  if ((future_ind < stim_reps.length) && (stim_reps[future_ind] == false)) {
+                    sample2.push(sample[j]);
+                  }
+                }
+              
+                // If there is space, then add it to that spot
+                if (sample2.length > 0) {
+                  // Add to repetition
+                  var repi = jsPsych.randomization.sampleWithoutReplacement(sample2, 1)[0];
+                  var nind = repi + k;
+                  stim_reps[nind] = true;
+                  // Save the index to show later
+                  if (data.key_press == null) {
+                    //var side = jsPsych.randomization.sampleWithoutReplacement(['left', 'right'], 1)[0];
+                    //if (side == 'left') {
+                    //  trial_s1_inds[nind] = data.left_ind;
+                    //} else {
+                    //  trial_s1_inds[nind] = data.right_ind;
+                    //}
+                    //trial_s1_inds2[nind] = data.ind;
+                  } else if (data.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('j')) {
+                    trial_s1_inds[nind] = data.left_ind;
+                    trial_s1_inds2[nind] = data.ind;
+                    blocks_repnum[h] += 1;
+                  } else {
+                    trial_s1_inds[nind] = data.right_ind;
+                    trial_s1_inds2[nind] = data.ind;
+                    blocks_repnum[h] += 1;
+                  }
+                  //console.log('win: ' + toString(window.repnum));
+                } else {
+                  // This is bad, nowhere to repeat, oh dear
+                  console.log('bad, couldnt find repeat');
+                  data.willrep = 0;
+                }
+              }
+          }
+        }
+        trials.push(trial_a);
+      
+        // Can we do a no response, repeat?
+            
+        var trial_b = {
+          type: 'html-keyboard-response', 
+          data: { ttype: 'feedback' }, 
+          stimulus: function() {
+            var last_trial = jsPsych.data.get().last(1).values()[0];
+            if (last_trial.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('j')) {
+              return(String.format('<div><div id="rcorners2">{0}</div><div  id="rcorners2">{1}</div></div>', last_trial.val_left, stim_val_blank));
+            } else if (last_trial.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode('k')) {
+              return(String.format('<div><div id="rcorners2">{0}</div><div id="rcorners2">{1}</div></div>', stim_val_blank, last_trial.val_right));
+            } else {
+              return("<div style='font-size:2em'>Too Slow<br /><br />(Press j=left / k=right)</div>");
+            }
+          }, 
+          choices: jsPsych.NO_KEYS, 
+          stimulus_duration: 1500, 
+          trial_duration: 1500, 
+          response_ends_trial: false, 
+        }
+        trials.push(trial_b)
+      
+        var trial_c = {
+            type: 'html-keyboard-response',
+            data: { ttype: 'fix' }, 
+            stimulus: '<div style="font-size:3em">+</div>', 
+            choices: jsPsych.NO_KEYS, 
+            stimulus_duration: 500, 
+            trial_duration: 500, 
+            response_ends_trial: false
+        }
+        trials.push(trial_c);
+      }
+      
+      var fix_break2 = {
+          type: 'html-keyboard-response',
+          data: { ttype: 'fix', block: h }, 
+          stimulus: '<div style="font-size:3em">+</div>', 
+          choices: jsPsych.NO_KEYS, 
+          stimulus_duration: 1000, 
+          trial_duration: 1000, 
+          response_ends_trial: false
+      }
+      trials.push(fix_break2);
+      
+      var block_feedback = {
+        type: 'html-keyboard-response', 
+        data: { ttype: 'block_feedback' }, 
+        stimulus: function() {
+          var last_trial = jsPsych.data.get().last(1).values()[0];
+          console.log('end block ' + last_trial.block);
+          var tot_value = blocks_totval[last_trial.block];
+          return(String.format('Congratulations, you got ${0} in this block! (Please wait)', (tot_value*0.01).toFixed(2)))
+        }, 
+        choices: jsPsych.NO_KEYS, 
+        stimulus_duration: 5000, 
+        trial_duration: 5000, 
+        response_ends_trial: false, 
+        on_start: function(trial) {
+          var last_trial = jsPsych.data.get().last(1).values()[0];
+          trial.data.totval = blocks_totval[last_trial.block];
+        }
+      }
+      trials.push(block_feedback);
+      
+      //var check_trial1 = {
+      //  type: 'html-keyboard-response', 
+      //  data: { ttype: 'check', response: 'left' }, 
+      //  stimulus: String.format('<p class="subtitle">Press "j" on the keyboard.</p>'), 
+      //  trial_duration: 6000, 
+      //  response_ends_trial: true
+      //}
+      //var check_trial2 = {
+      //  type: 'html-keyboard-response', 
+      //  data: { ttype: 'check', response: 'right' }, 
+      //  stimulus: String.format('<p class="subtitle">Press "k" on the keyboard.</p>'), 
+      //  trial_duration: 6000, 
+      //  response_ends_trial: true
+      //}
+      //check_trials = jsPsych.randomization.sampleWithoutReplacement([check_trial1, check_trial2]);
+      //trials.push(trial_c);
+      //trials.push(check_trials[0]);
+      //trials.push(trial_c);
+      //trials.push(check_trials[1]);
+      //trials.push(trial_c);
+      
+    }
+    
+    trials.push({
+      type: 'fullscreen',
+      fullscreen_mode: false
+    });
+    
+    var fix_break3 = {
+        type: 'html-keyboard-response',
+        data: { ttype: 'fix'}, 
+        stimulus: '<div style="font-size:3em">+</div>', 
+        choices: jsPsych.NO_KEYS, 
+        stimulus_duration: 2000, 
+        trial_duration: 2000, 
+        response_ends_trial: false
+    }
+    trials.push(fix_break3);
+    
+
+    
+    var task_feedback = {
+      type: 'html-keyboard-response', 
+      data: { ttype: 'task_feedback' }, 
+      stimulus: function() {
+        var tot_value = blocks_totval[0] + blocks_totval[1] + blocks_totval[2];
+        return(String.format('In total across all 3 blocks, you earned ${0}. Press "j" or "k" to continue.', (tot_value*0.01).toFixed(2)))
+      }, 
+      choices: ["j", "k"], 
+      response_ends_trial: true,  
+      on_start: function(trial) {
+        var tot_value = blocks_totval[0] + blocks_totval[1] + blocks_totval[2];
+        trial.data.totval = tot_value*0.01;
+      }
+    }
+    trials.push(task_feedback);
+    
+
+    /****
+    * SAVE DATA
+    ****/
+    
+    // Save the data
+    function saveData(name, data){
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'save_data.php'); // 'write_data.php' is the path to the php file described above.
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify({filename: name, filedata: data}));
+    }
+    
+    // Make sure to grab the data before the end of the experiment
+    var dt = new Date();
+    var time = dt.getYear() + "-" + dt.getMonth() + "-" + dt.getDay() + "_" + dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+    var save_data = {
+      type: 'call-function', 
+      func: function() {
+        saveData("catlearn_v4_worker" + workId + "_" + sid + "_datetime_" + time + ".csv", jsPsych.data.get().csv());
+      }
+    }
+    trials.push(save_data);
+
+
+    /****
+    * SUBSEQUENT MEMORY TASK
+    ****/
+    
+    //trials = [];
+    
+    // Get the list of paths that chosen
+    var sm_paths = Array(3).fill([]);
+    var fun_trial = {
+      type: 'call-function', 
+      func: function() {
+        for (var bi = 0; bi < 3; bi++) {
+          lst = jsPsych.data.get().filter({ttype: 'stim', block: bi});
+          var paths = lst.values().map(function(x) {
+            if (x['key_press'] == 74) {
+              // Left
+              return x['left_path'];
+            } else if (x['key_press'] == 75) {
+              // Right
+              return x['right_path'];
+            } else {
+              return jsPsych.randomization.sampleWithoutReplacement([x['left_path'], x['right_path']], 1)[0];
+            }
+          })
+          sm_paths[bi] = jsPsych.randomization.sampleWithoutReplacement(paths.filter(n => n));
+        }
+        
+      }
+    }
+    trials.push(fun_trial);
+    
+    // Instructions
+    var instructions2 = {
+        type: 'instructions',
+        pages: [
+          '<p class="instruct">We will now ask you to complete some additional questions that probe your memory for the different objects that you just saw. This section will take 8-18mins to complete.</p><p class="instruct">For each object, please indicate what value is associated with that object based on the previous task. If you do not know, give your best guess. You will have a maximum of 7 seconds to respond. After you respond, the object disappears and another object is shown. You will not be given feedback on your answer.</p><p class="instruct">Good luck!</p>', 
+          '<p class="instruct">Feel free to take a brief break (up to ~1min) before continuing.</p>'
+        ],
+        show_clickable_nav: true
+    }
+    trials.push(instructions2);
+    
+    // Task
+    trials.push({
+      type: 'fullscreen',
+      fullscreen_mode: true
+    });
+    for (var h = 0; h < nblocks; h++) {
+      
+    //for (var h = 0; h < 1; h++) {
+      //console.log(h);
+      // Do I want to add any enforced break?
+      var block_start = {
+          type: 'html-keyboard-response',
+          data: { ttype: 'mem_block' }, 
+          stimulus: String.format('<div style="font-size:6em">Memory Block {0}</div><br /><p class="subtitle">(press any key to continue)</p>', h+1)
+      }
+      trials.push(block_start);
+      
+      var fix_break = {
+          type: 'html-keyboard-response',
+          data: { ttype: 'mem_fix' }, 
+          stimulus: '<div style="font-size:3em">+</div>', 
+          choices: jsPsych.NO_KEYS, 
+          stimulus_duration: 1500, 
+          trial_duration: 1500, 
+          response_ends_trial: false
+      }
+      trials.push(fix_break);
+      
+      var n = ntrials[h];
+      
+      for (var i = 0; i < n; i++) {
+        
+        var trial_a = {
+          type: 'html-button-response', 
+          data: { ttype: 'mem_stim', ind: i, block: h }, 
+          stimulus: '<img id="rcorners2" height="200" src="{0}" />', 
+          choices: ['0&#162', '20&#162', '40&#162', '60&#162', '80&#162', '&#36;1'], 
+          prompt: "What is the value of this object? (give your best guess)", 
+          trial_duration: 7000, 
+          response_ends_trial: true, 
+          on_start: function(trial) {
+            var path = sm_paths[trial.data.block][trial.data.ind];
+            trial.data.path = path;
+            trial.stimulus = String.format(trial.stimulus, path);
+          }
+        }
+        trials.push(trial_a);
+      
+        var trial_c = {
+            type: 'html-keyboard-response',
+            data: { ttype: 'mem_blank' }, 
+            stimulus: '<div style="font-size:3em"></div>', 
+            choices: jsPsych.NO_KEYS, 
+            stimulus_duration: 500, 
+            trial_duration: 500, 
+            response_ends_trial: false
+        }
+        trials.push(trial_c);
+      }
+    }
+    
+    trials.push({
+      type: 'fullscreen',
+      fullscreen_mode: false
+    });
+    
+    /****
+    * SAVE DATA AGAIN AND SHOW THE TASK FEEDBACK
+    ****/
+    
+    trials.push(save_data);
+    trials.push(task_feedback);
+    
+    /****
+    * Feedback
+    ****/
+    
+    // Debrief
+    var survey_trial1 = {
+      type: 'survey-text', 
+      data: {ttype: 'survey1'}, 
+      questions: [{
+        prompt: "<p class='instruct'>The goal of this experiment was to learn more about how we learn the value associated with a category (e.g., balloons or umbrellas). Some categories had objects with higher values while others had lower values. Did you notice each category associated with a discrete range of values (It's okay if you didn't notice anything)?</p>", 
+        rows: 8, 
+        columns: 60
+      }], 
+    };
+    trials.push(survey_trial1);
+    
+    // Ask participant about the study
+    var survey_trial2 = {
+      type: 'survey-text', 
+      data: {ttype: 'survey2'}, 
+      questions: [{
+        prompt: "<p class='instruct'>Please let us know if you have any comments or suggestions. For instance, maybe you noticed some photos did not load. I am still piloting this task so any feedback would be appreciated.</p><p class='instruct'>To complete the HIT, you will need the completion code for this study (I'll show this code on the next screen too): AJFHBG897</p>", 
+        rows: 8, 
+        columns: 60
+      }], 
+    };
+    trials.push(survey_trial2);
+    
+    
+    /****
+    * SAVE DATA YET AGAIN AND SAVE INTERACTION DATA
+    ****/
+    
+    trials.push(save_data);
+    
+    var interaction_data = jsPsych.data.getInteractionData();
+    
+    // Save the data
+    function saveData2(name, data){
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'save_interaction_data.php'); // 'write_data.php' is the path to the php file described above.
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify({filename: name, filedata: interaction_data}));
+    }
+    
+    // Make sure to grab the data before the end of the experiment
+    var dt = new Date();
+    var time = dt.getYear() + "-" + dt.getMonth() + "-" + dt.getDay() + "_" + dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+    var save_data = {
+      type: 'call-function', 
+      func: function() {
+        saveData2("catlearn_v4_interaction_worker" + workId + "_" + sid + "_datetime_" + time + ".csv", interaction_data.json());
+      }
+    }
+    trials.push(save_data);
+    
+    
+    /****
+    * END
+    ****/
+    
+    // Mention thanks
+    var done = {
+      type: 'html-keyboard-response', 
+      stimulus: '<p class="title">Thanks! You are all done.</p><br /><p class="subtitle">To complete the HIT, you will need the completion code for this study: AJFHBG897</p>',
+      choices: jsPsych.NO_KEYS
+    }
+    trials.push(done);
+    
+    // Add the subject id and set letter
+    jsPsych.data.addProperties({subject: sid, worker: workId, assignment: assId, hit: hitId});    
+    
+    // Put it all together
+    var stim_paths2   = block_data[0]['stim_paths'];
+    for (var i = 1; i < nblocks; i++) {
+      stim_paths2 = stim_paths2.concat(block_data[i]['stim_paths']);
+    }
+    jsPsych.init({
+        timeline: trials, 
+        preload_images: stim_paths2, 
+        show_progress_bar: true //, should i include this?
+      //on_trial_finish: function(data) {
+      //    console.log('A trial just ended.');
+      //    console.log(JSON.stringify(data));
+//        }
+    });
+    
+    
+    </script>
+</html>

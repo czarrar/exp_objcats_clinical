@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Test</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jquery.csv.min.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-survey-likert.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css">
+        <script src="bowser.min.js" ></script>
+        <script>
+            var trials = []; // All trials
+    
+            var sid = jsPsych.randomization.randomID(8);
+            
+            // Instructions: TO ADD
+            
+            // scale
+            var scale_1 = [
+              "Not at all", 
+              "A little", 
+              "Moderately", 
+              "A lot", 
+              "Extremely"
+            ];
+
+            var likert_page = {
+              type: 'survey-likert',
+              questions: [
+                {prompt: "I have saved up so many things that they get in the way", labels: scale_1, required: true, name: "OCIR-01"}, 
+                {prompt: "I check things more often than necessary", labels: scale_1, name: "OCIR-02"}
+              ], 
+              randomize_question_order: false, 
+              preamble: 'The following statements refer to experiences that many people have in their everyday lives. Circle the number that best describes <b>HOW MUCH</b> that experience has DISTRESSED or BOTHERED you during the PAST MONTH. The numbers refer to the following verbal labels:'
+            };
+            trials.push(likert_page);
+            
+            // Save it all
+            // TODO
+            
+            // Start up the task
+            jsPsych.init({
+                timeline: trials, 
+                //preload_images: stim_paths2, 
+                show_progress_bar: true, 
+              on_trial_finish: function(data) {
+                  console.log('A trial just ended.');
+                  console.log(JSON.stringify(data));
+                }
+            });
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
